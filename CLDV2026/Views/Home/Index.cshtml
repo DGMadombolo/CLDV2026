@@ -1,0 +1,24 @@
+﻿@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="text-center mt-5">
+    <h1 class="display-4 fw-bold">🎟️ Event Booking System</h1>
+    <p class="lead">Manage venues, organize events, and handle bookings all in one place.</p>
+
+    <hr class="my-4" />
+
+    <div class="mt-4">
+        <a asp-controller="Venues" asp-action="Index" class="btn btn-primary btn-lg m-2">
+            🏟️ View Venues
+        </a>
+
+        <a asp-controller="Events" asp-action="Index" class="btn btn-success btn-lg m-2">
+            🎉 View Events
+        </a>
+
+        <a asp-controller="Bookings" asp-action="Index" class="btn btn-warning btn-lg m-2">
+            📅 View Bookings
+        </a>
+    </div>
+</div>

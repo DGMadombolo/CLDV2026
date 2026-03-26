@@ -1,0 +1,49 @@
+﻿@model IEnumerable<CLDV2026.Models.Event>
+
+@{
+    ViewData["Title"] = "Events";
+}
+
+<h1 class="mb-4">🎉 Events</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">➕ Create New Event</a>
+</p>
+
+<table class="table table-striped table-hover shadow-sm">
+    <thead class="table-dark">
+        <tr>
+            <th>@Html.DisplayNameFor(model => model.EventName)</th>
+            <th>@Html.DisplayNameFor(model => model.EventDate)</th>
+            <th>@Html.DisplayNameFor(model => model.Description)</th>
+            <th>Venue</th>
+            <th>Image</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.EventName</td>
+                <td>@item.EventDate.ToShortDateString()</td>
+                <td>@item.Description</td>
+
+                <!-- 🔥 Show Venue Name -->
+                <td>@item.Venue?.VenueName</td>
+
+                <!-- 🔥 Show Image -->
+                <td>
+                    <img src="@item.ImageUrl" width="100" class="img-thumbnail" />
+                </td>
+
+                <!-- 🔥 Buttons -->
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.EventId" class="btn btn-sm btn-warning">Edit</a>
+                    <a asp-action="Details" asp-route-id="@item.EventId" class="btn btn-sm btn-info">Details</a>
+                    <a asp-action="Delete" asp-route-id="@item.EventId" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

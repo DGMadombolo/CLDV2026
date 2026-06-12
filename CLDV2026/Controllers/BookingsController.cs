@@ -17,13 +17,64 @@ namespace CLDV2026.Controllers
         }
 
         // GET: Bookings
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+    string? searchTerm,
+    int? eventTypeId,
+    bool? isAvailable,
+    DateTime? startDate,
+    DateTime? endDate)
         {
-            var bookings = _context.Bookings
+            var query = _context.Bookings
                 .Include(b => b.Event)
-                .Include(b => b.Venue);
+                    .ThenInclude(e => e.EventType)
+                .Include(b => b.Venue)
+                .AsQueryable();
 
-            return View(await bookings.ToListAsync());
+            // Search by Booking ID or Event Name
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                query = query.Where(b =>
+                    b.BookingId.ToString().Contains(searchTerm) ||
+                    b.Event!.EventName.Contains(searchTerm));
+            }
+
+            // Event Type Filter
+            if (eventTypeId.HasValue)
+            {
+                query = query.Where(b =>
+                    b.Event!.EventTypeId == eventTypeId);
+            }
+
+            // Venue Availability Filter
+            if (isAvailable.HasValue)
+            {
+                query = query.Where(b =>
+                    b.Venue!.IsAvailable == isAvailable.Value);
+            }
+
+            // Date Range Filter
+            if (startDate.HasValue)
+            {
+                query = query.Where(b =>
+                    b.BookingDate >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(b =>
+                    b.BookingDate <= endDate.Value);
+            }
+
+            // Preserve filter values
+            ViewBag.SearchTerm = searchTerm;
+            ViewBag.EventTypeId = eventTypeId;
+            ViewBag.IsAvailable = isAvailable;
+            ViewBag.StartDate = startDate?.ToString("yyyy-MM-dd");
+            ViewBag.EndDate = endDate?.ToString("yyyy-MM-dd");
+
+            ViewBag.EventTypes = await _context.EventTypes.ToListAsync();
+
+            return View(await query.ToListAsync());
         }
 
         // GET: Bookings/Create

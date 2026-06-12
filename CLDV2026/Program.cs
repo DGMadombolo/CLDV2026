@@ -1,4 +1,5 @@
 ﻿using CLDV2026.Data;
+using CLDV2026.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,6 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 // ✅ Add DbContext (THIS IS WHAT YOU WERE MISSING)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<BlobStorageService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

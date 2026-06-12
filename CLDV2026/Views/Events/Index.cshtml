@@ -16,6 +16,7 @@
             <th>@Html.DisplayNameFor(model => model.EventName)</th>
             <th>@Html.DisplayNameFor(model => model.EventDate)</th>
             <th>@Html.DisplayNameFor(model => model.Description)</th>
+            <th>Event Type</th>
             <th>Venue</th>
             <th>Image</th>
             <th>Actions</th>
@@ -28,6 +29,7 @@
                 <td>@item.EventName</td>
                 <td>@item.EventDate.ToShortDateString()</td>
                 <td>@item.Description</td>
+                <td>@item.EventType?.Name</td>
 
                 <!-- 🔥 Show Venue Name -->
                 <td>@item.Venue?.VenueName</td>

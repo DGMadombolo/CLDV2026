@@ -1,22 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using CLDV2026.Data;
+using CLDV2026.Models;
+using CLDV2026.Services;
+using Humanizer.Localisation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using CLDV2026.Data;
-using CLDV2026.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace CLDV2026.Controllers
 {
     public class EventsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly BlobStorageService _blobStorageService;
 
-        public EventsController(ApplicationDbContext context)
+        public EventsController(ApplicationDbContext context, BlobStorageService blobStorageService)
         {
             _context = context;
+            _blobStorageService = blobStorageService;
         }
 
         // GET: Events
@@ -50,16 +54,22 @@ namespace CLDV2026.Controllers
         public IActionResult Create()
         {
             ViewData["VenueId"] = new SelectList(_context.Venues, "VenueId", "VenueName");
+            ViewData["EventTypeId"] = new SelectList(_context.EventTypes, "EventTypeId", "Name");
             return View();
         }
 
         // POST: Events/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("EventId,EventName,EventDate,Description,VenueId,ImageUrl")] Event evt)
+        public async Task<IActionResult> Create([Bind("EventId,EventName,EventDate,Description,VenueId,ImageUrl,EventTypeId")] Event evt, IFormFile ImageFile)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
+                if (ImageFile != null && ImageFile.Length > 0)
+                {
+                    var imageUrl = await _blobStorageService.UploadFileAsync(ImageFile);
+                    evt.ImageUrl = imageUrl;
+                }
                 _context.Add(evt);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -83,23 +93,37 @@ namespace CLDV2026.Controllers
             }
 
             ViewData["VenueId"] = new SelectList(_context.Venues, "VenueId", "VenueName", evt.VenueId);
+            ViewData["EventTypeId"] = new SelectList(_context.EventTypes, "EventTypeId", "Name");
             return View(evt);
         }
 
         // POST: Events/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("EventId,EventName,EventDate,Description,VenueId,ImageUrl")] Event evt)
+        public async Task<IActionResult> Edit(int id, [Bind("EventId,EventName,EventDate,Description,VenueId,ImageUrl,EventTypeId")] Event evt, IFormFile ImageFile)
         {
             if (id != evt.EventId)
             {
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 try
                 {
+                    if (ImageFile != null && ImageFile.Length > 0)
+                    {
+                        // Delete old image if exists
+                        if (!string.IsNullOrEmpty(evt.ImageUrl))
+                        {
+                            var oldBlobName = new Uri(evt.ImageUrl).Segments.Last();
+                            await _blobStorageService.DeleteFileAsync(oldBlobName);
+                        }
+
+                        // Upload new image
+                        var imageUrl = await _blobStorageService.UploadFileAsync(ImageFile);
+                        evt.ImageUrl = imageUrl;
+                    }
                     _context.Update(evt);
                     await _context.SaveChangesAsync();
                 }
@@ -118,6 +142,7 @@ namespace CLDV2026.Controllers
             }
 
             ViewData["VenueId"] = new SelectList(_context.Venues, "VenueId", "VenueName", evt.VenueId);
+            ViewData["EventTypeId"] = new SelectList(_context.EventTypes, "EventTypeId", "Name");
             return View(evt);
         }
 

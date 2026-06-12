@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using CLDV2026.Data;
+using CLDV2026.Models;
+using CLDV2026.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using CLDV2026.Data;
-using CLDV2026.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace CLDV2026.Controllers
 {
@@ -14,9 +15,12 @@ namespace CLDV2026.Controllers
     {
         private readonly ApplicationDbContext _context;
 
-        public VenuesController(ApplicationDbContext context)
+        private readonly BlobStorageService _blobStorageService;
+
+        public VenuesController(ApplicationDbContext context, BlobStorageService blobStorageService)
         {
             _context = context;
+            _blobStorageService = blobStorageService;
         }
 
         // GET: Venues
@@ -54,10 +58,16 @@ namespace CLDV2026.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("VenueId,VenueName,Location,Capacity,ImageUrl")] Venue venue)
+        public async Task<IActionResult> Create([Bind("VenueId,VenueName,Location,Capacity,ImageUrl,IsAvailable")] Venue venue, IFormFile ImageFile)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
+                if (ImageFile != null && ImageFile.Length > 0)
+                {
+                    var imageUrl = await _blobStorageService.UploadFileAsync(ImageFile);
+                    venue.ImageUrl = imageUrl;
+                }
+
                 _context.Add(venue);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -86,15 +96,28 @@ namespace CLDV2026.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("VenueId,VenueName,Location,Capacity,ImageUrl")] Venue venue)
+        public async Task<IActionResult> Edit(int id, [Bind("VenueId,VenueName,Location,Capacity,ImageUrl,IsAvailable")] Venue venue, IFormFile ImageFile)
         {
             if (id != venue.VenueId)
             {
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
+                    if (ImageFile != null && ImageFile.Length > 0)
+                    {
+                        // Delete old image if exists
+                        if (!string.IsNullOrEmpty(venue.ImageUrl))
+                        {
+                            var oldBlobName = new Uri(venue.ImageUrl).Segments.Last();
+                            await _blobStorageService.DeleteFileAsync(oldBlobName);
+                        }
+    
+                        // Upload new image
+                        var imageUrl = await _blobStorageService.UploadFileAsync(ImageFile);
+                        venue.ImageUrl = imageUrl;
+                }
                 try
                 {
                     _context.Update(venue);

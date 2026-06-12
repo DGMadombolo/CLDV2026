@@ -14,7 +14,9 @@ namespace CLDV2026.Data
         public DbSet<Event> Events { get; set; }
         public DbSet<Booking> Bookings { get; set; }
 
-        
+        public DbSet<EventType> EventTypes { get; set; }
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -24,6 +26,8 @@ namespace CLDV2026.Data
                 .WithMany()
                 .HasForeignKey(b => b.VenueId)
                 .OnDelete(DeleteBehavior.NoAction); // 👈 prevents multiple cascade paths
+
+            
         }
     }
 }
